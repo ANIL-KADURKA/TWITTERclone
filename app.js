@@ -105,10 +105,102 @@ app.post("/login", async (request, response) => {
 });
 app.get("/user/tweets/feed/", authenticateToken, async (request, response) => {
   const { username } = request;
-  console.log(username);
+  //console.log(username);
   const dbUser = `select * from user where username= '${username}';`;
   const dbResponse = await db.get(dbUser);
   const user_id = dbResponse.user_id;
-  response.send("hey");
+  const db2 = ` select following_user_id from follower where follower_user_id
+  =${user_id}`;
+  const dbRe = await db.all(db2);
+  let bc = [];
+  for (let i of dbRe) {
+    bc.push(i.following_user_id);
+  }
+  const f1_user_id = bc[0];
+  const f2_user_id = bc[1];
+  //   console.log(bc);
+  //console.log(dbRe);
+  const dbF = `select tweet,user_id,date_time from tweet where 
+  (user_id =${f1_user_id} or user_id=${f2_user_id})
+  order by date_time limit  4 offset 0;`;
+  const dbRep = await db.all(dbF);
+  // console.log(dbRep);
+  const po = `select username from user where user_id = ${f1_user_id} or 
+   user_id = ${f2_user_id}`;
+  const op = await db.all(po);
+  let cd = [];
+  for (let i of op) {
+    cd.push(i.username);
+  }
+  //   console.log(cd);
+  let arr = [];
+  let name = -1;
+  let obj = null;
+  for (let i of dbRep) {
+    // console.log(i);
+    // console.log(i.user_id);
+    if (i.user_id === f1_user_id) {
+      name = 0;
+    }
+    if (i.user_id === f2_user_id) {
+      name = 1;
+    }
+    obj = {
+      username: cd[name],
+      tweet: i.tweet,
+      dateTime: i.date_time,
+    };
+    arr.push(obj);
+  }
+  console.log("HELLO WORLD");
+  response.send(arr);
 });
+
+app.get("/user/following/", authenticateToken, async (request, response) => {
+  const { username } = request;
+  //console.log(username);
+  const dbUser = `select * from user where username= '${username}';`;
+  const dbResponse = await db.get(dbUser);
+  const user_id = dbResponse.user_id;
+  const db2 = ` select following_user_id from follower where follower_user_id
+    =${user_id}`;
+  const dbRe = await db.all(db2);
+  let bc = [];
+  for (let i of dbRe) {
+    bc.push(i.following_user_id);
+  }
+  const f1_user_id = bc[0];
+  const f2_user_id = bc[1];
+  const po = `select username from user where user_id = ${f1_user_id} or 
+    user_id = ${f2_user_id}`;
+  const op = await db.all(po);
+  response.send(op);
+  console.log(12);
+});
+
+app.get("/user/followers/", authenticateToken, async (request, response) => {
+  const { username } = request;
+  //console.log(username);
+  const dbUser = `select * from user where username= '${username}';`;
+  const dbResponse = await db.get(dbUser);
+  const user_id = dbResponse.user_id;
+  const db2 = ` select follower_user_id from follower where following_user_id
+        =${user_id}`;
+  const dbRe = await db.all(db2);
+  console.log(dbRe);
+  let bc = [];
+  for (let i of dbRe) {
+    bc.push(i.follower_user_id);
+  }
+  const f1_user_id = bc[0];
+  const f2_user_id = bc[1];
+  const po = `select username from user where user_id = ${f1_user_id} or
+        user_id = ${f2_user_id}`;
+  const op = await db.all(po);
+  response.send(op);
+  console.log(12);
+});
+// app.get("/tweets/:tweetId/",async(request,response) => {
+
+// });
 module.exports = app;
